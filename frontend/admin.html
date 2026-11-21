@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - Hintern Bridge</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .admin-login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+      }
+      .admin-login-form {
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+      }
+      .admin-login-form h2 {
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 28px;
+      }
+      .admin-login-form .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+      .admin-login-form label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 500;
+      }
+      .admin-login-form input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e1e1e1;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+      .admin-login-form input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+      .admin-login-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s;
+      }
+      .admin-login-btn:hover {
+        transform: translateY(-2px);
+      }
+      .error-message {
+        color: #e74c3c;
+        margin-top: 15px;
+        padding: 10px;
+        background: #fdf2f2;
+        border-radius: 5px;
+        display: none;
+      }
+      .admin-dashboard {
+        display: none;
+      }
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-left: 10px;
+      }
+      .status-badge.approved {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .status-badge.pending {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        margin: 2px;
+      }
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+      }
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+      }
+      .btn:hover {
+        opacity: 0.8;
+      }
+      .detail-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .student-actions,
+      .company-actions {
+        margin-top: 10px;
+      }
+      .table-container {
+        overflow-x: auto;
+        margin: 20px 0;
+      }
+      .internships-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .internships-table th {
+        background-color: #667eea;
+        color: white;
+        padding: 12px 8px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .internships-table td {
+        padding: 12px 8px;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+      }
+      .internships-table tr:hover {
+        background-color: #f8f9fa;
+      }
+      .description-cell {
+        max-width: 200px;
+        word-wrap: break-word;
+        font-size: 13px;
+      }
+      .actions-cell {
+        white-space: nowrap;
+      }
+      .tabs {
+        margin: 20px 0;
+      }
+      .tab-btn {
+        padding: 10px 20px;
+        background-color: #e9ecef;
+        border: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        margin-right: 5px;
+      }
+      .tab-btn.active {
+        background-color: #667eea;
+        color: white;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .filters {
+        margin: 20px 0;
+        display: flex;
+        gap: 10px;
+      }
+      .filters input,
+      .filters select {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .admin-actions {
+        margin: 20px 0;
+      }
+      .privilege-tag {
+        display: inline-block;
+        background-color: #e7e7e7;
+        color: #333;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin: 2px;
+      }
+      .no-results {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+      .no-results i {
+        font-size: 48px;
+        margin-bottom: 20px;
+        color: #ccc;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+      .privilege-form {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 20px 0;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      /* Ensure admin dashboard tables use full width and footer sits at bottom */
+      #admin-dashboard main {
+        max-width: 100%;
+        width: 100%;
+      }
+      /* Slightly reduce admin nav bar size */
+      #admin-dashboard .header-content {
+        padding: 0.7rem 1rem;
+      }
+      #admin-dashboard .logo {
+        font-size: 1.5rem;
+      }
+      #admin-dashboard nav ul {
+        gap: 1rem;
+      }
+      #admin-dashboard nav a {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Admin Login Form -->
+    <div id="admin-login-container" class="admin-login-container">
+      <div class="admin-login-form">
+        <h2><i class="fas fa-shield-alt"></i> Admin Login</h2>
+        <form id="admin-login-form">
+          <div class="form-group">
+            <label for="admin-email">Email Address</label>
+            <input type="email" id="admin-email" name="email" required />
+          </div>
+          <div class="form-group">
+            <label for="admin-password">Password</label>
+            <input
+              type="password"
+              id="admin-password"
+              name="password"
+              required
+            />
+          </div>
+          <button type="submit" class="admin-login-btn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+          <div id="error-message" class="error-message"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard (Hidden by default) -->
+    <div id="admin-dashboard" class="admin-dashboard">
+      <!-- Navigation Bar -->
+      <header>
+        <div class="header-content">
+          <a href="admin.html" class="logo"
+            ><i class="fas fa-bridge"></i> Hintern Bridge</a
+          >
+          <nav>
+            <ul>
+              <li>
+                <a href="admin.html" class="active"
+                  ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+                >
+              </li>
+              <li>
+                <a href="#students"
+                  ><i class="fas fa-graduation-cap"></i> Students</a
+                >
+              </li>
+              <li>
+                <a href="#companies"
+                  ><i class="fas fa-building"></i> Companies</a
+                >
+              </li>
+              <li>
+                <a href="#internships"
+                  ><i class="fas fa-briefcase"></i> Internships</a
+                >
+              </li>
+              <li>
+                <a href="#applications"
+                  ><i class="fas fa-envelope-open-text"></i> Applications</a
+                >
+              </li>
+              <li>
+                <a href="#privileges"
+                  ><i class="fas fa-user-shield"></i> Privileges</a
+                >
+              </li>
+              <li>
+                <a href="#" id="admin-logout-btn"
+                  ><i class="fas fa-sign-out-alt"></i> Logout</a
+                >
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <!-- Dashboard Overview -->
+        <section class="dashboard-overview">
+          <h1>Admin Dashboard</h1>
+          <p>Welcome to the Hintern Bridge administration panel</p>
+
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-number" id="total-students">0</span>
+              <span class="stat-label">Total Students</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="total-companies">0</span>
+              <span class="stat-label">Total Companies</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="total-internships">0</span>
+              <span class="stat-label">Total Internships</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number" id="total-applications">0</span>
+              <span class="stat-label">Total Applications</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Students Management -->
+        <section id="students" class="profile-section">
+          <div class="profile-header">
+            <h2><i class="fas fa-graduation-cap"></i> Student Management</h2>
+          </div>
+
+          <div class="filters">
+            <select id="student-status-filter">
+              <option value="all">All Students</option>
+              <option value="approved">Approved</option>
+              <option value="waiting">Waiting</option>
+            </select>
+          </div>
+
+          <div class="students-list" id="students-list">
+            <!-- Student cards will be loaded here dynamically -->
+            <div class="no-results">
+              <i class="fas fa-users"></i>
+              <p>No students found. Loading student data...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Companies Management -->
+        <section id="companies" class="profile-section">
+          <div class="profile-header">
+            <h2><i class="fas fa-building"></i> Company Management</h2>
+          </div>
+
+          <div class="filters">
+            <select id="company-status-filter">
+              <option value="all">All Companies</option>
+              <option value="approved">Approved</option>
+              <option value="waiting">Waiting</option>
+            </select>
+          </div>
+
+          <div class="companies-list" id="companies-list">
+            <!-- Company cards will be loaded here dynamically -->
+            <div class="no-results">
+              <i class="fas fa-building"></i>
+              <p>No companies found. Loading company data...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Internships Management -->
+        <section id="internships" class="internship-section">
+          <div class="profile-header">
+            <h2><i class="fas fa-briefcase"></i> Internship Management</h2>
+          </div>
+
+          <div class="filters">
+            <select id="internship-status-filter">
+              <option value="all">All Internships</option>
+              <option value="approved">Approved</option>
+              <option value="waiting">Waiting</option>
+            </select>
+          </div>
+
+          <div class="internship-list" id="internships-list">
+            <!-- Internship cards will be loaded here dynamically -->
+            <div class="no-results">
+              <i class="fas fa-briefcase"></i>
+              <p>No internships found. Loading internship data...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Applications Management -->
+        <section
+          id="applications"
+          class="profile-section"
+          style="display: none"
+        >
+          <div class="profile-header">
+            <h2>
+              <i class="fas fa-envelope-open-text"></i> Applications Management
+            </h2>
+          </div>
+          <div class="filters">
+            <select id="applications-status-filter">
+              <option value="all">All Applications</option>
+              <option value="pending">Pending</option>
+              <option value="accepted">Accepted</option>
+            </select>
+          </div>
+          <div class="table-container">
+            <table class="internships-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Company</th>
+                  <th>Internship</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="applications-table-body">
+                <tr>
+                  <td colspan="5" class="loading">Loading applications...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Privileges Management -->
+        <section id="privileges" class="profile-section">
+          <div class="profile-header">
+            <h2><i class="fas fa-user-shield"></i> Privilege Management</h2>
+          </div>
+
+          <div class="privilege-form">
+            <h3>Grant Privilege to User</h3>
+            <div class="form-group">
+              <label for="user-email">User Email</label>
+              <input
+                type="email"
+                id="user-email"
+                placeholder="Enter user's email address"
+                list="user-emails-list"
+              />
+              <datalist id="user-emails-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="privilege-select">Select Privileges</label>
+              <select id="privilege-select">
+                <option value="">Select privileges</option>
+              </select>
+            </div>
+            <button
+              id="grant-privilege-btn"
+              type="button"
+              class="btn btn-primary"
+            >
+              Grant Privilege
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="internships-table">
+              <thead>
+                <tr>
+                  <th>User Email</th>
+                  <th>Privilege</th>
+                  <th>Granted By</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="granted-privileges-table-body">
+                <tr>
+                  <td colspan="4" class="loading">
+                    Loading granted privileges...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <!-- Footer -->
+      <footer>
+        <p>&copy; 2025 Hintern Bridge. All rights reserved.</p>
+      </footer>
+    </div>
+
+    <script src="admin.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const filterEl = document.getElementById("applications-status-filter");
+        const tbody = document.getElementById("applications-table-body");
+        function applyApplicationsDOMFilter() {
+          const val = (
+            filterEl && filterEl.value ? filterEl.value : "all"
+          ).toLowerCase();
+          if (!tbody) return;
+          const rows = tbody.querySelectorAll("tr");
+          rows.forEach((tr) => {
+            const cells = tr.querySelectorAll("td");
+            // Skip placeholder rows
+            if (cells.length < 5) {
+              tr.style.display = "";
+              return;
+            }
+            const statusText = (cells[3].textContent || "")
+              .trim()
+              .toLowerCase();
+            let show = true;
+            if (val === "accepted") {
+              show = statusText === "accepted";
+            } else if (val === "pending") {
+              // Treat any non-finalized state as pending (exclude accepted/rejected)
+              show = statusText !== "accepted" && statusText !== "rejected";
+            } else {
+              show = true; // all
+            }
+            tr.style.display = show ? "" : "none";
+          });
+        }
+        if (filterEl) {
+          filterEl.addEventListener("change", applyApplicationsDOMFilter);
+        }
+        if (tbody) {
+          const obs = new MutationObserver(() => applyApplicationsDOMFilter());
+          obs.observe(tbody, { childList: true });
+        }
+        applyApplicationsDOMFilter();
+      });
+    </script>
+  </body>
+</html>

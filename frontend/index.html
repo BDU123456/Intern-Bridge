@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hintern Bridge - Tech Internship Platform</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Minimal styles for the skills checkbox dropdown */
+      .skills-dropdown {
+        position: relative;
+      }
+      .skills-toggle {
+        border: 1px solid #ddd;
+        padding: 0.6rem 0.8rem;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        user-select: none;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .skills-toggle.open {
+        border-color: var(--primary, #4361ee);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+      }
+      .skills-menu {
+        position: absolute;
+        z-index: 20;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        max-height: 240px;
+        overflow: auto;
+        margin-top: 6px;
+        padding: 8px;
+      }
+      .skill-option {
+        display: block;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 8px 10px;
+        margin: 6px 0;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+      .skill-option:hover {
+        border-color: var(--primary, #4361ee);
+        background: rgba(67, 97, 238, 0.04);
+      }
+      .skill-option input {
+        margin-right: 10px;
+      }
+      .skills-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .skills-badge {
+        background: rgba(67, 97, 238, 0.08);
+        border: 1px solid rgba(67, 97, 238, 0.2);
+        color: #2b2d42;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+      }
+      .skills-placeholder {
+        color: #6b7280;
+      }
+      .skills-other-input {
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Auth Container -->
+    <div id="auth-container">
+      <div class="auth-card">
+        <div class="auth-header">
+          <a href="home.html" class="back-to-home">
+            <i class="fas fa-arrow-left"></i> Back to Home
+          </a>
+          <h1><i class="fas fa-bridge"></i> Hintern Bridge</h1>
+          <p>Connect with tech opportunities</p>
+        </div>
+
+        <div class="auth-tabs">
+          <button id="login-tab" class="active">Login</button>
+          <button id="register-tab">Register</button>
+          <div class="role-selector">
+            <label for="role-select">Register as:</label>
+            <select id="role-select">
+              <option value="student">Student</option>
+              <option value="company">Company</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="login-email"
+              >Email <span class="required">*</span></label
+            >
+            <input type="email" id="login-email" required />
+          </div>
+          <div class="form-group">
+            <label for="login-password"
+              >Password <span class="required">*</span></label
+            >
+            <div class="password-input">
+              <input type="password" id="login-password" required />
+              <i class="fas fa-eye-slash toggle-password"></i>
+            </div>
+          </div>
+          <div class="auth-footer">
+            <p><a href="#" id="forgot-password-link">Forgot Password?</a></p>
+            <p>
+              Not registered? <a href="#" id="switch-to-register">Sign up</a>
+            </p>
+          </div>
+          <button type="button" id="login-btn">Sign In</button>
+          <div class="or-divider">or</div>
+          <div id="google-login-button"></div>
+          <div
+            id="google-login-error"
+            style="color: blue; font-size: 12px; display: none"
+          ></div>
+        </form>
+
+        <!-- Student Registration -->
+        <form id="student-register-form" class="auth-form hidden">
+          <div class="form-group">
+            <label for="student-name"
+              >Full Name <span class="required">*</span></label
+            >
+            <input type="text" id="student-name" required />
+          </div>
+          <div class="form-group">
+            <label for="student-email"
+              >Email <span class="required">*</span></label
+            >
+            <input type="email" id="student-email" required />
+          </div>
+          <div class="form-group">
+            <label for="student-password"
+              >Password <span class="required">*</span></label
+            >
+            <div class="password-input">
+              <input
+                type="password"
+                id="student-password"
+                required
+                minlength="8"
+              />
+              <i class="fas fa-eye-slash toggle-password"></i>
+            </div>
+            <small>Minimum 8 characters with 1 number and uppercase</small>
+          </div>
+          <div class="form-group">
+            <label for="student-confirm-password"
+              >Confirm Password <span class="required">*</span></label
+            >
+            <div class="password-input">
+              <input type="password" id="student-confirm-password" required />
+              <i class="fas fa-eye-slash toggle-password"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="student-phone">Phone Number</label>
+            <input type="tel" id="student-phone" placeholder="+2519********" />
+          </div>
+          <div class="form-group">
+            <label for="university"
+              >University <span class="required">*</span></label
+            >
+            <input type="text" id="university" required />
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="student-terms" required />
+            <label for="student-terms">
+              I agree to the <a href="terms.html">Terms of Service</a> &
+              <a href="privacy.html">Privacy policy</a>
+              <span class="required">*</span>
+            </label>
+          </div>
+          <div class="auth-footer">
+            <p>
+              Already registered? <a href="#" id="switch-to-login">Sign in</a>
+            </p>
+          </div>
+          <button type="button" id="student-register-btn">
+            Register as Student
+          </button>
+          <div class="or-divider">or</div>
+          <div id="google-register-button"></div>
+          <div
+            id="google-register-error"
+            style="color: red; font-size: 12px; display: none"
+          ></div>
+        </form>
+
+        <!-- Company Registration -->
+        <form id="company-register-form" class="auth-form hidden">
+          <div class="form-group">
+            <label for="company-name"
+              >Company Name <span class="required">*</span></label
+            >
+            <input type="text" id="company-name" required />
+          </div>
+          <div class="form-group">
+            <label for="company-email"
+              >Email <span class="required">*</span></label
+            >
+            <input type="email" id="company-email" required />
+          </div>
+          <div class="form-group">
+            <label for="company-password"
+              >Password <span class="required">*</span></label
+            >
+            <div class="password-input">
+              <input
+                type="password"
+                id="company-password"
+                required
+                minlength="8"
+              />
+              <i class="fas fa-eye-slash toggle-password"></i>
+            </div>
+            <small>Minimum 8 characters with 1 numberand uppercase</small>
+          </div>
+          <div class="form-group">
+            <label for="company-confirm-password"
+              >Confirm Password <span class="required">*</span></label
+            >
+            <div class="password-input">
+              <input type="password" id="company-confirm-password" required />
+              <i class="fas fa-eye-slash toggle-password"></i>
+            </div>
+          </div>
+          <div class="form-check">
+            <input type="checkbox" id="company-terms" required />
+            <label for="company-terms">
+              I agree to the <a href="terms.html">Terms of Service</a> &
+              <a href="privacy.html">Privacy policy</a>
+              <span class="required">*</span>
+            </label>
+          </div>
+          <div class="auth-footer">
+            <p>
+              Already registered?
+              <a href="#" id="switch-to-login-company">Sign in</a>
+            </p>
+          </div>
+          <button type="button" id="company-register-btn">
+            Register as Company
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-key"></i> Reset Password</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <!-- Step 1: Enter Email -->
+          <div id="forgot-password-step-1" class="forgot-password-step">
+            <p>
+              Enter your email address and we'll send you a code to reset your
+              password.
+            </p>
+            <div class="form-group">
+              <label for="forgot-password-email"
+                >Email <span class="required">*</span></label
+              >
+              <input type="email" id="forgot-password-email" required />
+            </div>
+            <button
+              type="button"
+              id="send-reset-code-btn"
+              class="btn btn-primary"
+            >
+              Send Code
+            </button>
+          </div>
+
+          <!-- Step 2: Enter Reset Code -->
+          <div id="forgot-password-step-2" class="forgot-password-step hidden">
+            <p>
+              We've sent a 4-digit code to your email. Please enter it below to
+              reset your password.
+            </p>
+            <p id="code-expiry-timer" class="text-center">
+              Code expires in <span id="countdown">60</span> seconds
+            </p>
+            <div class="form-group">
+              <label for="reset-code"
+                >Reset Code <span class="required">*</span></label
+              >
+              <input type="text" id="reset-code" maxlength="4" required />
+            </div>
+            <button type="button" id="verify-code-btn" class="btn btn-primary">
+              Verify Code
+            </button>
+            <p class="text-center">
+              <a href="#" id="resend-code-link">Resend Code</a>
+            </p>
+          </div>
+
+          <!-- Step 3: Reset Password -->
+          <div id="forgot-password-step-3" class="forgot-password-step hidden">
+            <p>Enter your new password below.</p>
+            <div class="form-group">
+              <label for="new-password"
+                >New Password <span class="required">*</span></label
+              >
+              <div class="password-input">
+                <input
+                  type="password"
+                  id="new-password"
+                  required
+                  minlength="8"
+                />
+                <i class="fas fa-eye-slash toggle-password"></i>
+              </div>
+              <small>Minimum 8 characters with 1 number and uppercase</small>
+            </div>
+            <div class="form-group">
+              <label for="confirm-new-password"
+                >Confirm New Password <span class="required">*</span></label
+              >
+              <div class="password-input">
+                <input type="password" id="confirm-new-password" required />
+                <i class="fas fa-eye-slash toggle-password"></i>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="reset-password-btn"
+              class="btn btn-primary"
+            >
+              Reset Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Dashboard -->
+    <div id="student-container" class="hidden">
+      <header>
+        <div class="header-content">
+          <a href="#" class="logo"
+            ><i class="fas fa-bridge"></i> Hintern Bridge</a
+          >
+          <nav>
+            <ul>
+              <li>
+                <a href="#" class="nav-link" data-section="dashboard">
+                  <i class="fas fa-home"></i> Dashboard
+                </a>
+              </li>
+              <li>
+                <a href="#" class="nav-link" data-section="internships">
+                  <i class="fas fa-search"></i> Browse Internships
+                </a>
+              </li>
+              <li>
+                <a href="#" class="nav-link" data-section="portfolio">
+                  <i class="fas fa-briefcase"></i> My Portfolio
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <div class="profile-dropdown">
+            <button class="profile-btn" id="profile-dropdown-btn">
+              <i class="fas fa-user-circle"></i>
+            </button>
+            <div class="profile-dropdown-content" id="profile-dropdown-content">
+              <a href="#" id="edit-portfolio-dropdown">
+                <i class="fas fa-edit"></i> Edit Portfolio
+              </a>
+              <a href="#" id="student-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Dashboard Section -->
+        <div class="student-main-content" id="dashboard-section">
+          <section class="profile-section">
+            <div class="profile-header">
+              <div class="avatar"><i class="fas fa-user-graduate"></i></div>
+              <h2 id="student-display-name">Student Name</h2>
+            </div>
+
+            <div class="profile-details">
+              <div class="detail-card">
+                <h3><i class="fas fa-info-circle"></i> Profile Summary</h3>
+                <p>
+                  Welcome to your dashboard! Here you can browse internships and
+                  manage your portfolio.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="internship-section">
+            <h2>General Information</h2>
+
+            <div class="general-info-content">
+              <div class="info-card welcome-card">
+                <div class="card-icon">
+                  <i class="fas fa-briefcase"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Internship Opportunities</h3>
+                  <p>
+                    There are several internships released by many companies
+                    including:
+                  </p>
+                  <div class="company-list">
+                    <span class="company-tag loading"
+                      >Loading companies...</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="info-card action-card">
+                <div class="card-icon">
+                  <i class="fas fa-search"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Ready to Apply?</h3>
+                  <p>
+                    For more details and to apply for internships, please visit
+                    the <strong>Browse Internships</strong> section.
+                  </p>
+                  <div class="action-button">
+                    <button
+                      class="btn btn-primary browse-btn"
+                      onclick="document.querySelector('[data-section=&quot;internships&quot;]').click()"
+                    >
+                      <i class="fas fa-arrow-right"></i> Browse Internships
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Browse Internships Section -->
+        <div class="student-main-content hidden" id="internships-section">
+          <section class="internship-section">
+            <h2>Browse All Internships</h2>
+            <div class="filters"></div>
+
+            <div class="internship-list" id="browse-internship-list"></div>
+          </section>
+        </div>
+
+        <!-- Portfolio Section -->
+        <div class="student-main-content hidden" id="portfolio-section">
+          <section class="profile-section">
+            <h2>My Portfolio</h2>
+            <div class="portfolio-content">
+              <div id="student-portfolio-display">
+                <div class="portfolio-header">
+                  <h3 id="portfolio-name">Student Name</h3>
+                  <p id="portfolio-education-summary">
+                    Information System at Bahir Dar University
+                  </p>
+                </div>
+
+                <div class="portfolio-details">
+                  <div class="detail-card portfolio-mega-card">
+                    <div class="mega-header">
+                      <i class="fas fa-briefcase"></i>
+                      <h3>Portfolio Overview</h3>
+                    </div>
+                    <div class="mega-grid">
+                      <section class="mega-section">
+                        <h4><i class="fas fa-graduation-cap"></i> Education</h4>
+                        <div id="education-content">
+                          <p class="empty-field">No education added.</p>
+                        </div>
+                      </section>
+                      <section class="mega-section">
+                        <h4><i class="fas fa-code"></i> Skills</h4>
+                        <div class="skills-container" id="skills-content">
+                          <p class="empty-field">No skills added.</p>
+                        </div>
+                      </section>
+                      <section class="mega-section">
+                        <h4><i class="fas fa-project-diagram"></i> Projects</h4>
+                        <div id="projects-content">
+                          <p class="empty-field">No projects added.</p>
+                        </div>
+                      </section>
+                      <section class="mega-section">
+                        <h4><i class="fas fa-file-pdf"></i> Resume</h4>
+                        <div id="resume-display">
+                          <p id="resume-status-display">No resume uploaded</p>
+                          <button id="upload-resume-display-btn">
+                            Upload Resume
+                          </button>
+                          <input
+                            type="file"
+                            id="resume-file-input-display"
+                            accept=".pdf,.doc,.docx"
+                            class="hidden"
+                          />
+                        </div>
+                      </section>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="student-portfolio-edit-form" class="hidden">
+                <h3>Edit Your Portfolio</h3>
+                <div class="form-group">
+                  <label for="edit-student-name">Full Name</label>
+                  <input
+                    type="text"
+                    id="edit-student-name"
+                    class="form-control"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label>Education</label>
+                  <div id="edit-education-container"></div>
+                </div>
+
+                <div class="form-group">
+                  <label>Skills</label>
+                  <div
+                    id="edit-skills-container"
+                    class="skills-container"
+                  ></div>
+                  <div class="add-skill-input">
+                    <input
+                      type="text"
+                      id="edit-new-skill"
+                      placeholder="Add new skill"
+                    />
+                    <button
+                      type="button"
+                      id="add-edit-skill-btn"
+                      class="btn btn-secondary btn-sm"
+                    >
+                      <i class="fas fa-plus"></i> Add Skill
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Projects</label>
+                  <div id="edit-projects-container"></div>
+                  <div class="add-project-input">
+                    <input
+                      type="text"
+                      id="edit-new-project-title"
+                      class="edit-project-title"
+                      placeholder="Project Title"
+                    />
+                    <textarea
+                      id="edit-new-project-description"
+                      class="edit-project-description"
+                      placeholder="Project Description"
+                    ></textarea>
+                    <button
+                      type="button"
+                      id="add-edit-project-btn"
+                      class="btn btn-secondary btn-sm"
+                    >
+                      <i class="fas fa-plus"></i> Add Project
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Resume</label>
+                  <div id="resume-edit">
+                    <p id="resume-status-edit">No resume uploaded</p>
+                    <button
+                      id="upload-resume-edit-btn"
+                      class="btn btn-secondary"
+                    >
+                      <i class="fas fa-upload"></i> Upload Resume
+                    </button>
+                    <input
+                      type="file"
+                      id="resume-file-input-edit"
+                      accept=".pdf,.doc,.docx"
+                      class="hidden"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    id="save-portfolio-btn"
+                    class="btn btn-primary"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    id="cancel-portfolio-edit"
+                    class="btn btn-danger"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Company Dashboard -->
+    <div id="company-container" class="hidden">
+      <header>
+        <div class="header-content">
+          <a href="#" class="logo"
+            ><i class="fas fa-bridge"></i> Hintern Bridge</a
+          >
+          <nav>
+            <ul>
+              <li>
+                <a href="#" class="nav-link" data-section="dashboard">
+                  <i class="fas fa-home"></i> Dashboard
+                </a>
+              </li>
+              <li>
+                <a href="#" class="nav-link" data-section="postings">
+                  <i class="fas fa-plus-circle"></i> Post Internship
+                </a>
+              </li>
+              <li>
+                <a href="#" class="nav-link" data-section="applicants">
+                  <i class="fas fa-users"></i> Applicants
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <div class="profile-dropdown">
+            <button class="profile-btn" id="company-profile-dropdown-btn">
+              <i class="fas fa-user-circle"></i>
+            </button>
+            <div
+              class="profile-dropdown-content"
+              id="company-profile-dropdown-content"
+            >
+              <a href="#" id="edit-company-profile-dropdown">
+                <i class="fas fa-edit"></i> Edit Profile
+              </a>
+              <a href="#" id="company-logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <!-- Company Dashboard Section -->
+        <div class="company-main-content" id="company-dashboard-section">
+          <section class="company-profile">
+            <div class="company-header">
+              <div class="avatar"><i class="fas fa-building"></i></div>
+              <h2 id="company-display-name">Company Name</h2>
+            </div>
+
+            <div class="company-details">
+              <div class="company-info-row">
+                <div class="detail-card">
+                  <h3><i class="fas fa-map-marker-alt"></i> Address</h3>
+                  <p id="company-address">Bahir Dar Kebele 04, ICT parke</p>
+                </div>
+
+                <div class="detail-card">
+                  <h3><i class="fas fa-info-circle"></i> About Us</h3>
+                  <p id="company-about">
+                    One of the biggest and influencial company
+                  </p>
+                </div>
+              </div>
+
+              <div class="detail-card stats-card">
+                <h3><i class="fas fa-chart-line"></i> Statistics</h3>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-number" id="posted-internships">0</span>
+                    <span class="stat-label">Posted Internships</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-number" id="total-applicants">0</span>
+                    <span class="stat-label">Total Applicants</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-number" id="active-internships">0</span>
+                    <span class="stat-label">Active Internships</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Edit Company Profile Form (Hidden by default) -->
+          <section
+            class="company-profile-edit hidden"
+            id="company-profile-edit-section"
+          >
+            <h2>Edit Company Profile</h2>
+            <form id="edit-company-form">
+              <div class="form-group">
+                <label for="edit-company-name">Company Name</label>
+                <input
+                  type="text"
+                  id="edit-company-name"
+                  class="form-control"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="edit-company-address">Address</label>
+                <input
+                  type="text"
+                  id="edit-company-address"
+                  class="form-control"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="edit-company-about">About Us</label>
+                <textarea
+                  id="edit-company-about"
+                  class="form-control"
+                  rows="4"
+                ></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  type="submit"
+                  id="save-company-profile-btn"
+                  class="btn btn-primary"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  id="cancel-company-edit"
+                  class="btn btn-danger"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="posted-internships">
+            <h2>Your Posted Internships</h2>
+            <div class="internship-list" id="company-internship-list"></div>
+          </section>
+        </div>
+
+        <!-- Post Internship Section -->
+        <div class="company-main-content hidden" id="postings-section">
+          <section class="post-internship">
+            <h2>Post New Internship</h2>
+            <form id="internship-form">
+              <div class="form-group">
+                <label for="internship-title"
+                  >Title <span class="required">*</span></label
+                >
+                <input type="text" id="internship-title" required />
+              </div>
+
+              <div class="form-group">
+                <label for="internship-type"
+                  >Internship Type <span class="required">*</span></label
+                >
+                <select id="internship-type" required>
+                  <option value="">Select type</option>
+                  <option>Web Development</option>
+                  <option>Mobile Development</option>
+                  <option>Networking</option>
+                  <option>Data Science</option>
+                  <option>UI/UX Design</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="internship-desc">Description <span>*</span></label>
+                <textarea id="internship-desc" rows="4"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="internship-skills-select"
+                  >Required Skill <span class="required">*</span></label
+                >
+                <div id="skills-dropdown" class="skills-dropdown">
+                  <div id="skills-dropdown-toggle" class="skills-toggle">
+                    <span class="skills-placeholder">Select skill(s)</span>
+                  </div>
+                  <div id="skills-dropdown-menu" class="skills-menu hidden">
+                    <label class="skill-option"
+                      ><input type="checkbox" value="React" />React</label
+                    >
+                    <label class="skill-option"
+                      ><input type="checkbox" value="Node js" />Node js</label
+                    >
+                    <label class="skill-option"
+                      ><input type="checkbox" value="Cisco" />Cisco</label
+                    >
+                    <label class="skill-option"
+                      ><input type="checkbox" value="Rubby" />Rubby</label
+                    >
+                    <label class="skill-option"
+                      ><input type="checkbox" value="Java" />Java</label
+                    >
+                    <label class="skill-option"
+                      ><input type="checkbox" value="Other" />Other...</label
+                    >
+                    <input
+                      type="text"
+                      id="internship-skills-other"
+                      class="skills-other-input hidden"
+                      placeholder="Enter custom skill(s), comma-separated"
+                    />
+                  </div>
+                </div>
+                <input type="hidden" id="internship-skills" />
+              </div>
+
+              <div class="form-group">
+                <label for="internship-location">Location</label>
+                <input
+                  type="text"
+                  id="internship-location"
+                  placeholder="Remote, New York, etc."
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="internship-duration">Duration (months)</label>
+                <input
+                  type="number"
+                  id="internship-duration"
+                  min="1"
+                  max="12"
+                  value="3"
+                  required
+                />
+              </div>
+
+              <button type="submit" id="post-internship-btn">
+                Post Internship
+              </button>
+            </form>
+          </section>
+        </div>
+
+        <!-- Applicants Section -->
+        <div class="company-main-content hidden" id="applicants-section">
+          <section class="applicants-section">
+            <h2>Applicants</h2>
+            <div class="filters">
+              <select id="applicant-filter">
+                <option>All Internships</option>
+              </select>
+              <input
+                type="text"
+                id="applicant-search"
+                placeholder="Search applicants..."
+              />
+              <button id="refresh-applicants-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+              <button id="accepted-applicants-btn" class="btn btn-primary">
+                <i class="fas fa-user-check"></i> Accepted Applicants
+              </button>
+            </div>
+
+            <div class="applicants-list" id="applicants-list">
+              <div class="no-applicants">
+                <i class="fas fa-users-slash"></i>
+                <p>No applicants yet</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const ddToggle = document.getElementById("skills-dropdown-toggle");
+        const ddMenu = document.getElementById("skills-dropdown-menu");
+        const hiddenAggEl = document.getElementById("internship-skills");
+        const otherEl = document.getElementById("internship-skills-other");
+        if (ddToggle && ddMenu && hiddenAggEl && otherEl) {
+          const checkboxes = Array.from(
+            ddMenu.querySelectorAll('input[type="checkbox"]')
+          );
+          const renderBadges = (skills) => {
+            if (!skills.length) {
+              ddToggle.innerHTML =
+                '<span class="skills-placeholder">Select skill(s)</span>';
+              return;
+            }
+            const badges = skills
+              .map((s) => `<span class="skills-badge">${s}</span>`)
+              .join(" ");
+            ddToggle.innerHTML = `<div class="skills-badges">${badges}</div>`;
+          };
+          const updateAggregation = () => {
+            const selected = checkboxes
+              .filter((cb) => cb.checked && cb.value.toLowerCase() !== "other")
+              .map((cb) => cb.value.trim());
+            const otherChecked = checkboxes.some(
+              (cb) => cb.value.toLowerCase() === "other" && cb.checked
+            );
+            if (otherChecked) {
+              otherEl.classList.remove("hidden");
+            } else {
+              otherEl.classList.add("hidden");
+              otherEl.value = "";
+            }
+            const customs = otherEl.value
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const all = [...selected, ...customs];
+            const seen = new Set();
+            const deduped = all.filter((s) => {
+              const k = s.toLowerCase();
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+            hiddenAggEl.value = deduped.join(", ");
+            renderBadges(deduped);
+          };
+          // Toggle dropdown
+          ddToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            ddMenu.classList.toggle("hidden");
+            ddToggle.classList.toggle("open");
+          });
+          // Close on outside click
+          document.addEventListener("click", () => {
+            ddMenu.classList.add("hidden");
+            ddToggle.classList.remove("open");
+          });
+          // Prevent closing when clicking inside
+          ddMenu.addEventListener("click", (e) => e.stopPropagation());
+          // Bind change events
+          checkboxes.forEach((cb) =>
+            cb.addEventListener("change", updateAggregation)
+          );
+          otherEl.addEventListener("input", updateAggregation);
+          // Initialize UI
+          updateAggregation();
+        }
+      });
+    </script>
+  </body>
+</html>
