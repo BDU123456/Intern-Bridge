@@ -76,12 +76,16 @@ router.post('/:id/apply', authMiddleware(['student']), async (req, res) => {
     
     // Check if internship exists
     const [internshipRows] = await db.execute(
-      'SELECT id FROM internships WHERE id = ?',
+      'SELECT id, status FROM internships WHERE id = ?',
       [internshipId]
     );
     
     if (internshipRows.length === 0) {
       return res.status(404).json({ message: 'Internship not found' });
+    }
+
+    if (internshipRows[0].status !== 'active') {
+      return res.status(400).json({ message: 'Internship is not active' });
     }
     
     // Check if student has already applied

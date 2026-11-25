@@ -1,6 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
     // API Configuration
-    const API_BASE_URL = "http://localhost:5005/api";
+    const API_BASE_URL = "/api";
+
+    document.addEventListener("click", async (event) => {
+        const link = event.target.closest("[data-resume-file]");
+        if (!link) return;
+        event.preventDefault();
+
+        const resumeWindow = window.open("about:blank", "_blank");
+        if (!resumeWindow) return;
+
+        try {
+            const fileName = encodeURIComponent(link.dataset.resumeFile);
+            const response = await fetch(`${API_BASE_URL}/student/resume/${fileName}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            });
+            if (!response.ok) throw new Error("Resume request failed");
+
+            const fileUrl = URL.createObjectURL(await response.blob());
+            resumeWindow.location = fileUrl;
+            setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
+        } catch (error) {
+            resumeWindow.close();
+            alert("Could not open this resume.");
+        }
+    });
     let currentUser = null;
     // Map of internshipId -> application status for the logged-in student
     let studentApplicationStatus = {};
@@ -147,13 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const { token, user } = data;
+            localStorage.removeItem("adminToken");
+            localStorage.removeItem("adminUser");
             localStorage.setItem("token", token);
             currentUser = user;
             authContainer.classList.add("hidden");
             resetAuthFormInputs();
 
             if (user.role === "privileged_admin") {
-                window.location.href = "privileged-dashboard.html";
+                window.location.href = "admin.html";
             } else if (user.role === "student") {
                 studentContainer.classList.remove("hidden");
                 const profile = await getStudentProfile();
@@ -455,30 +481,42 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Company Dashboard Helper ---
     async function renderCompanyDashboard() {
         try {
-            // Fetch company profile
             const profile = await apiRequest("/company/profile", "GET", null, true);
             companyDisplayName.textContent = profile.name || "Company Name";
             document.getElementById("company-address").textContent = profile.address || "N/A";
             document.getElementById("company-about").textContent = profile.about || "N/A";
-            // Fetch internships and applicants for stats
-            const internships = await getCompanyInternships();
-            const applicants = await getApplicants();
-            // Count only pending applicants (not accepted or rejected)
-            const pendingApplicants = applicants.filter(applicant => 
-                applicant.status !== 'accepted' && applicant.status !== 'rejected'
-            );
-            document.getElementById("posted-internships").textContent = internships.length;
-            document.getElementById("active-internships").textContent = internships.filter(i => i.status === 'active').length;
-            document.getElementById("total-applicants").textContent = pendingApplicants.length;
         } catch (error) {
-            // fallback if profile fetch fails
+            console.error("Failed to load company profile:", error);
             companyDisplayName.textContent = "Company Name";
             document.getElementById("company-address").textContent = "N/A";
             document.getElementById("company-about").textContent = "N/A";
-            document.getElementById("posted-internships").textContent = "0";
-            document.getElementById("active-internships").textContent = "0";
-            document.getElementById("total-applicants").textContent = "0";
         }
+
+        let internships = [];
+        try {
+            internships = await getCompanyInternships();
+        } catch (error) {
+            console.error("Failed to load company internships:", error);
+        }
+
+        let applicants = [];
+        try {
+            applicants = await getApplicants();
+        } catch (error) {
+            console.error("Failed to load company applicants:", error);
+        }
+
+        companyInternshipsCache = internships;
+        ensureCompanyTypeFilterUI();
+        filterCompanyInternships();
+        displayApplicants(applicants);
+
+        const pendingApplicants = applicants.filter(applicant =>
+            applicant.status !== 'accepted' && applicant.status !== 'rejected'
+        );
+        document.getElementById("posted-internships").textContent = internships.length;
+        document.getElementById("active-internships").textContent = internships.filter(i => i.status === 'active').length;
+        document.getElementById("total-applicants").textContent = pendingApplicants.length;
     }
 
     // --- UI Functions ---
@@ -716,9 +754,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td class="description-cell">${skills}</td>
                     <td class="description-cell">${projects}</td>
                     <td>
-                        <a href="${API_BASE_URL}/uploads/${applicant.resume}" target="_blank" class="btn btn-info btn-sm">
-                            <i class="fas fa-file-pdf"></i> View Resume
-                        </a>
+                        ${applicant.resume
+                            ? `<button type="button" data-resume-file="${applicant.resume}" class="btn btn-info btn-sm">
+                                <i class="fas fa-file-pdf"></i> View Resume
+                            </button>`
+                            : 'No resume uploaded'}
                     </td>
                     <td class="actions-cell">
                         ${applicant.status === 'awaiting_payment' ? 
@@ -879,7 +919,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (portfolio.resume) {
             resumeStatus.innerHTML = `
                 <i class="fas fa-file-pdf"></i>
-                <a href="${API_BASE_URL}/uploads/${portfolio.resume}" target="_blank">View Resume</a>
+                <a href="#" data-resume-file="${portfolio.resume}">View Resume</a>
             `;
             document.getElementById("upload-resume-display-btn").textContent = "Change Resume";
         } else {
@@ -1008,6 +1048,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         try {
             const { token, user } = await login(email, password);
+            localStorage.removeItem("adminToken");
+            localStorage.removeItem("adminUser");
             localStorage.setItem("token", token);
             currentUser = user;
             authContainer.classList.add("hidden");
@@ -1015,7 +1057,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Always enter normal role dashboard from index.html
             if (user.role === "privileged_admin") {
-                window.location.href = "privileged-dashboard.html";
+                window.location.href = "admin.html";
             } else if (user.role === "student") {
                 studentContainer.classList.remove("hidden");
                 const profile = await getStudentProfile();
@@ -1025,12 +1067,6 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (user.role === "company") {
                 companyContainer.classList.remove("hidden");
                 await renderCompanyDashboard();
-                const internships = await getCompanyInternships();
-                companyInternshipsCache = internships;
-                ensureCompanyTypeFilterUI();
-                filterCompanyInternships();
-                const applicants = await getApplicants();
-                displayApplicants(applicants);
                 showSection("company-dashboard-section");
             } else {
                 window.location.href = "home.html";
@@ -1203,10 +1239,6 @@ document.addEventListener("DOMContentLoaded", () => {
            // ...inside companyNavLinks.forEach...
 if (section === "dashboard") {
     await renderCompanyDashboard();
-    const internships = await getCompanyInternships();
-    companyInternshipsCache = internships;
-    ensureCompanyTypeFilterUI();
-    filterCompanyInternships();
     showSection("company-dashboard-section"); // <-- ensure section is visible
 } else if (section === "applicants") {
                 // Populate internship filter dropdown
@@ -1319,10 +1351,6 @@ if (section === "dashboard") {
             alert("Internship posted successfully!");
             document.getElementById("internship-form").reset();
             await renderCompanyDashboard();
-            const internships = await getCompanyInternships();
-            companyInternshipsCache = internships;
-            ensureCompanyTypeFilterUI();
-            filterCompanyInternships();
             companyNavLinks.forEach(nav => nav.classList.remove("active"));
             document.querySelector('[data-section="dashboard"]').classList.add("active");
             showSection("company-dashboard-section");
@@ -1371,8 +1399,6 @@ if (section === "dashboard") {
             // Show company profile section and hide edit form
             document.querySelector('#company-dashboard-section .company-profile').classList.remove('hidden');
             document.getElementById("company-profile-edit-section").classList.add('hidden');
-            // Update the company dashboard
-            await renderCompanyDashboard();
         } catch (error) {
             alert("Failed to update profile: " + error.message);
         }
@@ -1778,7 +1804,7 @@ if (section === "dashboard") {
             const fileName = result.fileName || result.resume || e.target.files[0].name;
             resumeStatus.innerHTML = `
                 <i class="fas fa-file-pdf"></i>
-                <a href="${API_BASE_URL}/uploads/${fileName}" target="_blank">View Resume</a>
+                <a href="#" data-resume-file="${fileName}">View Resume</a>
             `;
             document.getElementById("upload-resume-display-btn").textContent = "Change Resume";
             

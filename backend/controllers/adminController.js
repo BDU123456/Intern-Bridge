@@ -45,7 +45,7 @@ export const adminLogin = async (req, res) => {
         email: user.email, 
         role: user.role 
       },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
     

@@ -1,32 +1,117 @@
 // Admin Dashboard JavaScript
-// Use API_BASE to correctly target backend when frontend is served from a different origin (e.g., 5500)
-const API_BASE = window.location.port === "5005" ? "" : "http://localhost:5005";
+const API_BASE = "";
+
+document.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-resume-file]");
+  if (!button) return;
+  event.preventDefault();
+
+  const resumeWindow = window.open("about:blank", "_blank");
+  if (!resumeWindow) return;
+
+  try {
+    const fileName = encodeURIComponent(button.dataset.resumeFile);
+    const response = await fetch(`${API_BASE}/api/student/resume/${fileName}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+    });
+    if (!response.ok) throw new Error("Resume request failed");
+
+    const fileUrl = URL.createObjectURL(await response.blob());
+    resumeWindow.location = fileUrl;
+    setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
+  } catch (error) {
+    resumeWindow.close();
+    alert("Could not open this resume.");
+  }
+});
 
 // Global caches for filtering
 let STUDENTS_CACHE = [];
 let COMPANIES_CACHE = [];
 let INTERNSHIPS_CACHE = [];
+let IS_ADMIN_USER = false;
+let CURRENT_PRIVS = new Set();
 
-document.addEventListener("DOMContentLoaded", function () {
-  // Check if user is already authenticated
-  const token = localStorage.getItem("adminToken");
-
-  if (token) {
-    // User is already logged in, show dashboard
-    showDashboard();
-    loadDashboardData(token);
-    setupEventListeners(token);
-  } else {
-    // Show login form
-    showLoginForm();
-  }
-
-  // Set up login form event listener
+document.addEventListener("DOMContentLoaded", async function () {
   const loginForm = document.getElementById("admin-login-form");
   if (loginForm) {
     loginForm.addEventListener("submit", handleAdminLogin);
   }
+
+  const tokens = [localStorage.getItem("adminToken"), localStorage.getItem("token")].filter(Boolean);
+  for (const token of [...new Set(tokens)]) {
+    if (await resolveDashboardSession(token)) {
+      initializeDashboard(token);
+      return;
+    }
+  }
+
+  showLoginForm();
 });
+
+async function resolveDashboardSession(token) {
+  const headers = { Authorization: `Bearer ${token}` };
+  try {
+    const profileResponse = await fetch('/api/student/profile', { headers });
+    if (profileResponse.ok) {
+      const profile = await profileResponse.json();
+      if (profile.role !== 'privileged_admin') return false;
+
+      const privilegesResponse = await fetch('/api/student/privileges', { headers });
+      if (!privilegesResponse.ok) return false;
+      const data = await privilegesResponse.json();
+
+      IS_ADMIN_USER = false;
+      CURRENT_PRIVS = new Set((data.privileges || []).map(privilege => privilege.name));
+      localStorage.setItem("adminToken", token);
+      localStorage.setItem("adminUser", JSON.stringify(profile));
+      return true;
+    }
+
+    const adminResponse = await fetch('/api/admin/dashboard/stats', { headers });
+    if (!adminResponse.ok) return false;
+
+    IS_ADMIN_USER = true;
+    CURRENT_PRIVS = new Set();
+    localStorage.setItem("adminToken", token);
+    localStorage.setItem("adminUser", JSON.stringify({ role: 'admin' }));
+    return true;
+  } catch (error) {
+    console.error("Failed to restore dashboard session:", error);
+    return false;
+  }
+}
+
+function initializeDashboard(token) {
+  showDashboard();
+  loadDashboardData(token);
+  setupEventListeners(token);
+}
+
+function hasPrivilege(privilege) {
+  return IS_ADMIN_USER || CURRENT_PRIVS.has(privilege);
+}
+
+function applyDashboardPermissions() {
+  const sectionPermissions = {
+    students: 'manage_students',
+    companies: 'manage_companies',
+    internships: 'manage_internships',
+    applications: 'manage_applications',
+    privileges: 'manage_admins'
+  };
+
+  Object.entries(sectionPermissions).forEach(([section, privilege]) => {
+    const allowed = hasPrivilege(privilege);
+    const element = document.getElementById(section);
+    const link = document.querySelector(`nav a[href="#${section}"]`);
+    if (element) element.hidden = !allowed;
+    if (link?.parentElement) link.parentElement.hidden = !allowed;
+  });
+
+  const statistics = document.querySelector('.stats-grid');
+  if (statistics) statistics.hidden = !hasPrivilege('view_statistics');
+}
 
 // Function to show login form
 function showLoginForm() {
@@ -44,6 +129,8 @@ function showDashboard() {
   const mainEl = dashboardEl.querySelector("main");
   if (mainEl) mainEl.style.flex = "1";
 
+  applyDashboardPermissions();
+
   // Set up navigation functionality
   setupNavigation();
 
@@ -58,7 +145,7 @@ function showDashboard() {
 
   // Load privilege management data
   const token = localStorage.getItem("adminToken");
-  if (token) {
+  if (token && hasPrivilege('manage_admins')) {
     loadSimplifiedPrivilegeManagementData(token);
   }
 
@@ -163,11 +250,10 @@ async function handleAdminLogin(e) {
       // Store token and user info
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("adminUser", JSON.stringify(data.user));
+      IS_ADMIN_USER = true;
+      CURRENT_PRIVS = new Set();
 
-      // Show dashboard
-      showDashboard();
-      loadDashboardData(data.token);
-      setupEventListeners(data.token);
+      initializeDashboard(data.token);
     } else {
       // Show error message
       errorMessage.textContent = data.message;
@@ -210,27 +296,23 @@ function setupEventListeners(token) {
 
 // Function to load dashboard data
 function loadDashboardData(token) {
-  // Show loading state
   showLoadingState();
+  const requests = [];
 
-  // Fetch dashboard statistics
-  fetchDashboardStats(token)
-    .then((stats) => {
-      updateDashboardStats(stats);
-      return Promise.all([
-        loadStudents(token),
-        loadCompanies(token),
-        loadInternships(token),
-      ]);
-    })
-    .then(() => {
-      hideLoadingState();
-    })
-    .catch((error) => {
-      console.error("Error loading dashboard data:", error);
-      hideLoadingState();
-      showErrorMessage("Failed to load dashboard data. Please try again.");
-    });
+  if (hasPrivilege('view_statistics')) {
+    requests.push(fetchDashboardStats(token).then(updateDashboardStats));
+  }
+  if (hasPrivilege('manage_students')) requests.push(loadStudents(token));
+  if (hasPrivilege('manage_companies')) requests.push(loadCompanies(token));
+  if (hasPrivilege('manage_internships')) requests.push(loadInternships(token));
+  if (hasPrivilege('manage_applications')) requests.push(loadApplications(token));
+
+  Promise.allSettled(requests).then(results => {
+    hideLoadingState();
+    if (results.some(result => result.status === 'rejected')) {
+      showErrorMessage("Some dashboard data could not be loaded.");
+    }
+  });
 }
 
 // Function to fetch dashboard statistics
@@ -329,9 +411,9 @@ function renderStudents(students) {
                 <td>
                     ${
                       student.resume
-                        ? `<a href="${API_BASE}/api/uploads/${student.resume}" target="_blank" class="btn btn-info btn-sm">
+                        ? `<button type="button" data-resume-file="${student.resume}" class="btn btn-info btn-sm">
                             <i class="fas fa-file-pdf"></i> View
-                        </a>`
+                        </button>`
                         : "No Resume"
                     }
                 </td>
@@ -954,7 +1036,8 @@ function approveApplication(applicationId, token) {
 function logoutAdmin() {
   localStorage.removeItem("adminToken");
   localStorage.removeItem("adminUser");
-  showLoginForm();
+  localStorage.removeItem("token");
+  window.location.href = "index.html";
 }
 
 // Simplified Privilege Management Functions
@@ -984,7 +1067,10 @@ function loadAvailablePrivileges(token) {
     '<option value="all_management">All Management</option>' +
     '<option value="student_management">Student Management</option>' +
     '<option value="company_management">Company Management</option>' +
-    '<option value="internship_management">Internship Management</option>';
+    '<option value="internship_management">Internship Management</option>' +
+    '<option value="manage_applications">Manage Applications</option>' +
+    '<option value="view_statistics">View Statistics</option>' +
+    '<option value="manage_admins">Manage Privileges</option>';
 }
 
 // Load granted privileges
@@ -1093,8 +1179,8 @@ function grantPrivilegeByEmail(token) {
     internship_management: ["manage_internships"],
   };
 
-  const privilegesToGrant = selectionMap[selection];
-  if (!privilegesToGrant || privilegesToGrant.length === 0) {
+  const privilegesToGrant = selectionMap[selection] || [selection];
+  if (privilegesToGrant.length === 0) {
     showErrorMessage("Invalid privilege selection");
     if (grantBtn) {
       grantBtn.disabled = false;

@@ -34,10 +34,16 @@ router.post('/login', adminLogin);
 router.use(authMiddleware(['admin', 'student', 'company', 'privileged_admin']));
 
 // Dashboard routes
-router.get('/dashboard/stats', getDashboardStats);
+router.get('/dashboard/stats',
+  privilegeCheckMiddleware({ requiredPrivileges: ['view_statistics'] }),
+  getDashboardStats
+);
 
 // Student management routes
-router.get('/students', getAllStudents);
+router.get('/students',
+  privilegeCheckMiddleware({ requiredPrivileges: ['manage_students'] }),
+  getAllStudents
+);
 router.post('/students/:studentId/approve', 
   privilegeCheckMiddleware({ requiredPrivileges: ['manage_students'] }), 
   approveStudent
@@ -48,7 +54,10 @@ router.delete('/students/:studentId/reject',
 );
 
 // Company management routes
-router.get('/companies', getAllCompanies);
+router.get('/companies',
+  privilegeCheckMiddleware({ requiredPrivileges: ['manage_companies'] }),
+  getAllCompanies
+);
 router.post('/companies/:companyId/approve', 
   privilegeCheckMiddleware({ requiredPrivileges: ['manage_companies'] }), 
   approveCompany
@@ -59,7 +68,10 @@ router.delete('/companies/:companyId/remove',
 );
 
 // Internship management routes
-router.get('/internships', getAllInternships);
+router.get('/internships',
+  privilegeCheckMiddleware({ requiredPrivileges: ['manage_internships'] }),
+  getAllInternships
+);
 router.post('/internships/:internshipId/approve', 
   privilegeCheckMiddleware({ requiredPrivileges: ['manage_internships'] }), 
   approveInternship
@@ -81,11 +93,11 @@ router.post('/payment/requests/:applicationId/send',
 
 // Applications tab endpoints
 router.get('/applications',
-  privilegeCheckMiddleware({ requiredPrivileges: ['manage_admins'] }),
+  privilegeCheckMiddleware({ requiredPrivileges: ['manage_applications'] }),
   getAllApplications
 );
 router.post('/applications/:applicationId/approve',
-  privilegeCheckMiddleware({ requiredPrivileges: ['manage_admins'] }),
+  privilegeCheckMiddleware({ requiredPrivileges: ['manage_applications'] }),
   approveApplicationByAdmin
 );
 

@@ -35,9 +35,7 @@ export const sendApplicationDetailsToCompany = async ({
         .join("")}</ul>`
     : "<p>No projects listed.</p>";
   const resumeHtml = resume
-    ? `<p>Resume: <a href="${
-        process.env.BASE_URL || "http://localhost:5005"
-      }/api/uploads/${resume}" target="_blank">View Resume</a></p>`
+    ? "<p>Log in to your company dashboard to view this applicant's resume.</p>"
     : "<p>No resume uploaded.</p>";
 
   const text =
@@ -50,13 +48,7 @@ export const sendApplicationDetailsToCompany = async ({
     `Projects: ${projects
       .map((p) => `${p.title || ""}: ${p.description || ""}`)
       .join("; ")}\n` +
-    `Resume: ${
-      resume
-        ? `${
-            process.env.BASE_URL || "http://localhost:5005"
-          }/api/uploads/${resume}`
-        : "No resume"
-    }\n\n` +
+    `Resume: ${resume ? "Log in to your company dashboard to view this resume" : "No resume"}\n\n` +
     `Please log in to your dashboard and click "Ready to Accept" on this applicant if you want to proceed. You can contact the student via email or phone for any follow-up.\n\n` +
     `Best regards,\nHinternBridge Team`;
 
